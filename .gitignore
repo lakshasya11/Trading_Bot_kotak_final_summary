@@ -1,0 +1,68 @@
+# Node
+node_modules/
+package-lock.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Trading Bot Specific
+access_token*.json
+strategy_params.json
+broker_config.json
+user_profiles.json
+*.db
+trading_data*.db
+last_run_date.txt
+.env
+login/**/node_modules/
+frontend/node_modules/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+trading_log.txt
+
+# Temporary files
+*.tmp
+temp/
+pending_sync.json
+
+# User Credentials & Private Data
+/login/server/users.json
+/login/server/.env
+**/*.json.old
+**/*.json.bak
+**/users.json

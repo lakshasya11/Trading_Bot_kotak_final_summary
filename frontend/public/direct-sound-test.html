@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Direct Sound Test</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
+    <style>
+        body { font-family: Arial; padding: 50px; background: #1e1e1e; color: white; }
+        button { padding: 20px 40px; margin: 10px; font-size: 18px; cursor: pointer; }
+        #log { background: black; padding: 20px; margin-top: 20px; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <h1>🔊 Direct Sound Test</h1>
+    <p>Click buttons to test if sounds work:</p>
+    
+    <button onclick="testEntry()">Test Entry Sound (0.7 volume)</button>
+    <button onclick="testProfit()">Test Profit Sound (0.7 volume)</button>
+    <button onclick="testWarning()">Test Warning Sound (1.0 volume)</button>
+    
+    <div id="log"></div>
+
+    <script>
+        const log = (msg, color = 'white') => {
+            const div = document.getElementById('log');
+            const time = new Date().toLocaleTimeString();
+            div.innerHTML += `<div style="color: ${color}">[${time}] ${msg}</div>`;
+        };
+
+        log('Initializing sounds...', 'cyan');
+
+        // Create sounds exactly like App.jsx
+        const sounds = {
+            entry: new Howl({ 
+                src: ['/sound/entry.mp3'], 
+                volume: 0.7,
+                onload: () => log('✅ Entry sound loaded', 'green'),
+                onloaderror: (id, err) => log(`❌ Entry load error: ${err}`, 'red'),
+                onplayerror: (id, err) => log(`❌ Entry play error: ${err}`, 'red')
+            }),
+            profit: new Howl({ 
+                src: ['/sound/profit.mp3'], 
+                volume: 0.7,
+                onload: () => log('✅ Profit sound loaded', 'green'),
+                onloaderror: (id, err) => log(`❌ Profit load error: ${err}`, 'red'),
+                onplayerror: (id, err) => log(`❌ Profit play error: ${err}`, 'red')
+            }),
+            warning: new Howl({ 
+                src: ['/sound/warning.mp3'], 
+                volume: 1.0,
+                onload: () => log('✅ Warning sound loaded', 'green'),
+                onloaderror: (id, err) => log(`❌ Warning load error: ${err}`, 'red'),
+                onplayerror: (id, err) => log(`❌ Warning play error: ${err}`, 'red')
+            })
+        };
+
+        function testEntry() {
+            log('Playing entry sound...', 'yellow');
+            sounds.entry.play();
+            sounds.entry.once('play', () => log('✅ Entry sound is playing!', 'green'));
+            sounds.entry.once('end', () => log('✅ Entry sound finished', 'green'));
+        }
+
+        function testProfit() {
+            log('Playing profit sound...', 'yellow');
+            sounds.profit.play();
+            sounds.profit.once('play', () => log('✅ Profit sound is playing!', 'green'));
+            sounds.profit.once('end', () => log('✅ Profit sound finished', 'green'));
+        }
+
+        function testWarning() {
+            log('Playing warning sound...', 'yellow');
+            sounds.warning.play();
+            sounds.warning.once('play', () => log('✅ Warning sound is playing!', 'green'));
+            sounds.warning.once('end', () => log('✅ Warning sound finished', 'green'));
+        }
+
+        log('Ready! Click buttons to test sounds.', 'cyan');
+    </script>
+</body>
+</html>

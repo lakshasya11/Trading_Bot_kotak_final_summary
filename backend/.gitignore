@@ -1,0 +1,28 @@
+# Broker credentials (NEVER commit)
+broker_config.json
+
+# Virtual Environment
+venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Database file
+trading_data.db
+
+# Sensitive Files (VERY IMPORTANT)
+.env
+access_token.json
+trading_data_all.db
+trading_data_today.db
+last_run_date.txt
+Strategy.md
+
+
+# IDE & System Files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

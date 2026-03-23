@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Trading Bot Sounds</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        h1 {
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        .subtitle {
+            text-align: center;
+            opacity: 0.9;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+        }
+        .sound-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        .sound-button {
+            padding: 30px 20px;
+            font-size: 1.2em;
+            font-weight: bold;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        .sound-button:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+        .sound-button:active {
+            transform: translateY(-2px);
+        }
+        .sound-button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        .sound-button:active::before {
+            width: 300px;
+            height: 300px;
+        }
+        .entry {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+        .profit {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            color: #1a5f3d;
+        }
+        .loss {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            color: #5a1f3d;
+        }
+        .warning {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        .icon {
+            font-size: 2em;
+            display: block;
+            margin-bottom: 10px;
+        }
+        .description {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            line-height: 1.6;
+        }
+        .test-all {
+            margin-top: 30px;
+            text-align: center;
+        }
+        .test-all button {
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            color: #5a3825;
+            padding: 15px 40px;
+            font-size: 1.1em;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+        .test-all button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+        .status {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 1.1em;
+            font-weight: bold;
+            min-height: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔊 Trading Bot Sound Test</h1>
+        <div class="subtitle">Click each button to hear the sound</div>
+        
+        <div class="sound-grid">
+            <button class="sound-button entry" onclick="playSound('entry')">
+                <span class="icon">🔔</span>
+                <div>ENTRY</div>
+                <small>Trade Opened</small>
+            </button>
+            
+            <button class="sound-button profit" onclick="playSound('profit')">
+                <span class="icon">💰</span>
+                <div>PROFIT</div>
+                <small>Made Money</small>
+            </button>
+            
+            <button class="sound-button loss" onclick="playSound('loss')">
+                <span class="icon">📉</span>
+                <div>LOSS</div>
+                <small>Lost Money</small>
+            </button>
+            
+            <button class="sound-button warning" onclick="playSound('warning')">
+                <span class="icon">⚠️</span>
+                <div>WARNING</div>
+                <small>Error Alert</small>
+            </button>
+        </div>
+
+        <div class="test-all">
+            <button onclick="testAllSounds()">🎵 Test All Sounds in Sequence</button>
+        </div>
+
+        <div class="status" id="status"></div>
+
+        <div class="description">
+            <strong>How the sounds work:</strong><br>
+            • <strong>Entry:</strong> Plays when a new trade is opened<br>
+            • <strong>Profit:</strong> Plays when you exit a trade with profit<br>
+            • <strong>Loss:</strong> Plays when you exit a trade with loss<br>
+            • <strong>Warning:</strong> Plays when there's an error or issue<br><br>
+            <small>These sounds play automatically during live trading!</small>
+        </div>
+    </div>
+
+    <script>
+        const sounds = {};
+        const soundFiles = ['entry', 'profit', 'loss', 'warning'];
+        
+        // Preload all sounds
+        soundFiles.forEach(sound => {
+            sounds[sound] = new Audio(`sound/${sound}.mp3`);
+            sounds[sound].volume = sound === 'warning' ? 1.0 : 0.7;
+        });
+
+        function playSound(soundName) {
+            const audio = sounds[soundName];
+            audio.currentTime = 0;
+            audio.play()
+                .then(() => {
+                    document.getElementById('status').innerHTML = `🔊 Playing: <strong>${soundName.toUpperCase()}</strong>`;
+                    setTimeout(() => {
+                        document.getElementById('status').innerHTML = '';
+                    }, 2000);
+                })
+                .catch(err => {
+                    document.getElementById('status').innerHTML = `❌ Error playing ${soundName}: ${err.message}`;
+                });
+        }
+
+        async function testAllSounds() {
+            const sequence = [
+                { name: 'entry', delay: 2000 },
+                { name: 'profit', delay: 2500 },
+                { name: 'loss', delay: 2000 },
+                { name: 'warning', delay: 2500 }
+            ];
+
+            document.getElementById('status').innerHTML = '🎵 Playing all sounds in sequence...';
+
+            for (let i = 0; i < sequence.length; i++) {
+                const item = sequence[i];
+                document.getElementById('status').innerHTML = 
+                    `🔊 Playing ${i + 1}/${sequence.length}: <strong>${item.name.toUpperCase()}</strong>`;
+                
+                await sounds[item.name].play();
+                
+                if (i < sequence.length - 1) {
+                    await new Promise(resolve => setTimeout(resolve, item.delay));
+                }
+            }
+
+            setTimeout(() => {
+                document.getElementById('status').innerHTML = '✅ All sounds tested!';
+                setTimeout(() => {
+                    document.getElementById('status').innerHTML = '';
+                }, 2000);
+            }, 1000);
+        }
+
+        // Unlock audio on first interaction
+        document.addEventListener('click', function() {
+            soundFiles.forEach(sound => {
+                sounds[sound].play();
+                sounds[sound].pause();
+                sounds[sound].currentTime = 0;
+            });
+        }, { once: true });
+    </script>
+</body>
+</html>

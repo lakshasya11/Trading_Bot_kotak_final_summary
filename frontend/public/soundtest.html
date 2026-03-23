@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sound Test</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
+</head>
+<body>
+    <h1>Isolated Sound Test</h1>
+    <p>This page tests if your browser can play the sound file using Howler.js, with no React or WebSockets involved.</p>
+
+    <button onclick="playSound()">Test Entry Sound</button>
+
+    <script>
+        console.log("Sound test page loaded. Initializing Howler...");
+
+        // Initialize a single sound
+        const entrySound = new Howl({
+            src: ['/sound/entry.mp3']
+        });
+
+        entrySound.on('loaderror', function(id, error) {
+            console.error("Howler Load Error:", error);
+        });
+
+        entrySound.on('playerror', function(id, error) {
+            console.error("Howler Playback Error:", error);
+        });
+
+        function playSound() {
+            console.log("Button clicked. Attempting to play sound...");
+            entrySound.play();
+        }
+    </script>
+</body>
+</html>

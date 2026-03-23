@@ -1,0 +1,7 @@
+flask==2.3.3
+flask-cors==4.0.0
+python-dotenv==1.0.0
+pyotp==2.9.0
+qrcode==7.4.2
+Pillow==10.0.1
+psycopg2-binary==2.9.9

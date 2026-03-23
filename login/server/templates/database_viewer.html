@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Database Viewer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+
+        .db-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .db-item {
+            margin: 10px 0;
+        }
+
+        .db-link {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #6c5ce7;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            width: 200px;
+            text-align: center;
+        }
+
+        .db-link:hover {
+            background: #5a4ad1;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Database Viewer</h1>
+    <h2>Available Tables</h2>
+    <ul class="db-list">
+        {% for db in db_views %}
+        <li class="db-item">
+            <a class="db-link" href="/view_data?db={{ db }}">{{ db.replace('_', ' ').title() }}</a>
+        </li>
+        {% endfor %}
+    </ul>
+    
+    <script>
+        function loadData() {
+            // JavaScript function that loads data based on selected database
+            console.log('Loading database data...');
+        }
+        
+        function updateSignupTable() {
+            // Updates the signup data table display
+            fetch('/api/get-signup-data')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Signup data updated:', data.length, 'records');
+                })
+                .catch(error => console.error('Error updating signup table:', error));
+        }
+        
+        function updateSessionTable() {
+            // Updates the session data table with real-time information
+            fetch('/api/sessions')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Session data updated:', data.length, 'records');
+                })
+                .catch(error => console.error('Error updating session table:', error));
+        }
+        
+        // Auto-refresh data every 30 seconds
+        setInterval(() => {
+            updateSignupTable();
+            updateSessionTable();
+        }, 30000);
+    </script>
+</body>
+
+</html>

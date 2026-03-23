@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Database Viewer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #030014;
+            --glass-bg: rgba(17, 25, 40, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent-primary: #a855f7;
+            --accent-secondary: #06b6d4;
+            --success: #10b981;
+            --danger: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-dark);
+            background-image:
+                radial-gradient(circle at 10% 20%, rgba(76, 29, 149, 0.4) 0%, transparent 50%),
+                radial-gradient(circle at 90% 80%, rgba(124, 58, 237, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(30, 27, 75, 0.5) 0%, transparent 60%),
+                radial-gradient(circle at 80% 10%, rgba(236, 72, 153, 0.15) 0%, transparent 40%);
+            min-height: 100vh;
+            padding: 40px;
+            color: var(--text-primary);
+            background-attachment: fixed;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+        }
+
+        .title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fff 0%, #cbd5e1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            text-shadow: 0 0 30px rgba(255, 255, 255, 0.1);
+        }
+
+        .back-btn {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+            border: 1px solid var(--glass-border);
+            padding: 12px 24px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            font-family: inherit;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .dropdown-container {
+            margin-bottom: 30px;
+            display: flex;
+            align-items: flex-end;
+            gap: 30px;
+        }
+
+        .select-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .dropdown-label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        select {
+            width: 300px;
+            padding: 14px 20px;
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            font-size: 16px;
+            background: var(--glass-bg);
+            color: var(--text-primary);
+            cursor: pointer;
+            font-family: inherit;
+            backdrop-filter: blur(12px);
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        select:focus {
+            border-color: var(--accent-primary);
+        }
+
+        select option {
+            background: var(--bg-dark);
+            color: var(--text-primary);
+        }
+
+        #sessionStats {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        #sessionStats>div {
+            background: var(--glass-bg);
+            padding: 14px 24px;
+            border-radius: 12px;
+
+            /* Match User Session Dropdown Highlight */
+            border: 1px solid var(--accent-primary);
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.15);
+            /* Subtle purple glow */
+
+            backdrop-filter: blur(12px);
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .data-container {
+            background: var(--glass-bg);
+            border-radius: 20px;
+            padding: 30px;
+            height: 650px;
+            border: 1px solid var(--glass-border);
+            overflow: auto;
+            position: relative;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .data-container::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        .data-container::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+        }
+
+        .data-container::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        .data-container::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        thead th {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.12);
+            /* Match table cell background */
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .no-data {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .no-data::before {
+            content: '📊';
+            font-size: 3rem;
+            opacity: 0.5;
+            filter: grayscale(1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-top: 5px;
+        }
+
+        th,
+        td {
+            padding: 16px 20px;
+            text-align: left;
+            border-bottom: 1px solid var(--glass-border);
+            font-size: 14px;
+        }
+
+        /* Shiny Animated Table Header */
+        /* Shiny Animated Table Header */
+        /* Shiny Animated Table Header */
+        th {
+            color: #ffffff;
+            /* Explicit White */
+            font-weight: 800;
+            /* Extra Bold */
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 1.5px;
+
+            /* Uniform Light Background */
+            background: rgba(255, 255, 255, 0.12);
+
+            /* Shiny Glow Effect */
+            text-shadow:
+                0 0 5px rgba(168, 85, 247, 0.8),
+                0 0 10px rgba(168, 85, 247, 0.5),
+                0 0 20px rgba(255, 255, 255, 0.4);
+
+            border-bottom: 2px solid #a855f7;
+            /* Purple accent border */
+            padding: 18px 20px;
+            white-space: nowrap;
+        }
+
+        /* Shine Animation on hover */
+        th:hover {
+            background: rgba(255, 255, 255, 0.18);
+            /* Brighter on hover */
+            color: #cbd5e1;
+            text-shadow:
+                0 0 8px rgba(168, 85, 247, 1),
+                0 0 15px rgba(255, 255, 255, 0.6);
+            transition: all 0.3s ease;
+        }
+
+        /* Particle Canvas */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        td {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.12);
+            /* Uniform Light Background for ALL cells */
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* Sl. No. Column Highlight - Kept bold but background is transparent to use td's background */
+        td:first-child,
+        th:first-child {
+            font-weight: 700;
+            text-align: center;
+            border-right: 1px solid var(--glass-border);
+            /* Removed specific background to ensure uniformity */
+        }
+
+        th:first-child {
+            border-top-left-radius: 12px;
+        }
+
+        tr {
+            transition: transform 0.2s, background-color 0.2s;
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.12) !important;
+            /* Brighter on hover */
+            transform: scale(1.01);
+            /* Subtle pop */
+            z-index: 1;
+        }
+
+        .active-status {
+            color: var(--success);
+            font-weight: 600;
+            background: rgba(16, 185, 129, 0.1);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+        }
+
+        /* P&L Colors */
+        .color-green {
+            color: var(--success) !important;
+            font-weight: 600;
+        }
+
+        .color-red {
+            color: var(--danger) !important;
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="bg-canvas"></canvas>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">
+                <!-- Database SVG Icon -->
+                <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="url(#iconGradient)" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round"
+                    style="filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.5));">
+                    <defs>
+                        <linearGradient id="iconGradient" x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%" stop-color="#a855f7" />
+                            <stop offset="100%" stop-color="#22d3ee" />
+                        </linearGradient>
+                    </defs>
+                    <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                    <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+                    <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+                </svg>
+                <span
+                    style="background: linear-gradient(135deg, #fff, #e2e8f0); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Database
+                    Viewer</span>
+            </h1>
+            <button class="back-btn" onclick="window.close()">← Back</button>
+        </div>
+        <div class="dropdown-container">
+            <div class="select-wrapper">
+                <div class="dropdown-label">Select Database:</div>
+                <select id="dbSelect">
+                    <option value="signup">Signup Data</option>
+                    <option value="session">User Session Data</option>
+                </select>
+            </div>
+            <div id="sessionStats" style="display: none;">
+                <div>
+                    <span class="stat-label">Total Sessions</span>
+                    <span id="totalSessionsDisplay" class="stat-value">0</span>
+                </div>
+                <div>
+                    <span class="stat-label">Total Trades</span>
+                    <span id="totalTradesDisplay" class="stat-value">0</span>
+                </div>
+                <div>
+                    <span class="stat-label">Total Net P&L</span>
+                    <span id="totalPnlDisplay" class="stat-value">₹0.00</span>
+                </div>
+            </div>
+        </div>
+        <div id="dataContainer" class="data-container">
+            <div class="no-data">📈<br><br>Select a database to view data</div>
+        </div>
+    </div>
+
+    <script>
+        let updateInterval;
+
+        function loadData() {
+            const select = document.getElementById('dbSelect');
+            const value = select.value;
+            const container = document.getElementById('dataContainer');
+            const sessionStats = document.getElementById('sessionStats');
+
+            if (!value) {
+                clearInterval(updateInterval);
+                container.innerHTML = '<div class="no-data">📈<br><br>Select a database to view data</div>';
+                sessionStats.style.display = 'none';
+                return;
+            }
+
+            sessionStats.style.display = (value === 'session') ? 'flex' : 'none';
+
+            if (value === 'signup') {
+                // Fixed: Port 5001 for Login Server
+                fetch(`http://127.0.0.1:5001/api/get-signup-data?t=${new Date().getTime()}`)
+                    .then(r => r.json())
+                    .then(data => updateSignupTable(data, container))
+                    .catch(err => {
+                        container.innerHTML = '<div class="no-data">❌ Error loading signup data from port 5001</div>';
+                    });
+            } else if (value === 'session') {
+                const url = `${window.location.origin}/api/sessions?t=${new Date().getTime()}`;
+
+                fetch(url)
+                    .then(r => r.json())
+                    .then(data => updateSessionTable(data, container))
+                    .catch(err => {
+                        container.innerHTML = '<div class="no-data">❌ Error loading sessions</div>';
+                    });
+            }
+        }
+
+        function updateSignupTable(data, container) {
+            if (!data || data.length === 0) {
+                container.innerHTML = '<div class="no-data">No signup data found</div>';
+                return;
+            }
+            let html = `<p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 15px;">🔄 Auto-updating... (Last checked: ${new Date().toLocaleTimeString()})</p>`;
+            html += '<table><thead><tr><th>ID</th><th>Client ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Aadhar</th><th>QR Key</th><th>Username</th><th>Created At</th></tr></thead><tbody>';
+            data.forEach((user, index) => {
+                html += `<tr><td>${index + 1}</td><td>${user.clientId || user.client_id || '-'}</td><td>${user.firstName || ''} ${user.lastName || ''}</td><td>${user.email || '-'}</td><td>${user.mobile || '-'}</td><td>${user.aadhar || '-'}</td><td>${user.qr_key || '-'}</td><td>${user.username || '-'}</td><td>${user.created_at || '-'}</td></tr>`;
+            });
+            container.innerHTML = html + '</tbody></table>';
+        }
+
+        function updateSessionTable(data, container) {
+            if (!data || data.length === 0) {
+                container.innerHTML = '<div class="no-data">📈 No sessions found</div>';
+                document.getElementById('totalSessionsDisplay').innerText = '0';
+                document.getElementById('totalTradesDisplay').innerText = '0';
+                document.getElementById('totalPnlDisplay').innerText = '₹0.00';
+                return;
+            }
+
+            // Fetch live performance for the active session, then render
+            fetch(`${window.location.origin}/api/performance?t=${new Date().getTime()}`)
+                .then(r => r.json())
+                .catch(() => ({ trades_today: 0, net_pnl: 0 }))
+                .then(perf => {
+                    let grandTotalPnl = 0;
+                    let grandTotalTrades = 0;
+
+                    data.forEach(s => {
+                        if (!s.logout_time) {
+                            // active session: use live perf
+                            grandTotalTrades += parseInt(perf.trades_today) || 0;
+                            grandTotalPnl += parseFloat(perf.net_pnl) || 0;
+                        } else {
+                            grandTotalTrades += parseInt(s.total_trades) || 0;
+                            grandTotalPnl += parseFloat(s.pnl) || 0;
+                        }
+                    });
+
+                    const grandTotalSessions = data.length;
+
+                    document.getElementById('totalSessionsDisplay').innerText = grandTotalSessions;
+                    document.getElementById('totalTradesDisplay').innerText = grandTotalTrades;
+                    const pnlDisplay = document.getElementById('totalPnlDisplay');
+                    pnlDisplay.innerText = `₹${grandTotalPnl.toFixed(2)}`;
+                    pnlDisplay.className = `stat-value ${grandTotalPnl >= 0 ? 'color-green' : 'color-red'}`;
+                    pnlDisplay.style.color = '';
+
+                    let html = `<p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 15px;">🔄 Auto-updating... (Last checked: ${new Date().toLocaleTimeString()})</p>`;
+                    html += '<table><thead><tr><th>S.No</th><th>Kotak ID</th><th>Client ID</th><th>Name</th><th>Date</th><th>Login</th><th>Logout</th><th>Mode</th><th>Trades</th><th>Net P&L</th></tr></thead><tbody>';
+
+                    data.forEach((s, index) => {
+                        const isActive = !s.logout_time;
+                        // For active row, use live perf data instead of stale DB values
+                        const trades = isActive ? (parseInt(perf.trades_today) || 0) : (s.total_trades || 0);
+                        const net_pnl = isActive ? (parseFloat(perf.net_pnl) || 0) : (s.pnl || 0);
+                        const kotakUcc = s.client_id || '-';
+                        const signupId = s.signup_client_id || '-';
+                        const name = s.name || '-';
+                        const date = s.date || new Date(s.login_time).toLocaleDateString() || '-';
+                        const loginTime = s.login_time;
+                        const logoutTime = s.logout_time;
+                        const mode = s.mode || 'UNKNOWN';
+
+                        html += '<tr>';
+                        html += `<td>${index + 1}</td><td>${kotakUcc}</td><td>${signupId}</td><td>${name}</td><td>${date}</td>`;
+                        html += `<td>${loginTime ? new Date(loginTime).toLocaleTimeString() : '-'}</td>`;
+                        const logoutDisplay = logoutTime ? new Date(logoutTime) : null;
+                        const isValidLogout = logoutDisplay && !isNaN(logoutDisplay.getTime());
+                        html += `<td>${isValidLogout ? logoutDisplay.toLocaleTimeString() : '<span class="active-status">Active</span>'}</td>`;
+                        html += `<td>${mode}</td><td>${trades}</td>`;
+                        html += `<td class="${net_pnl >= 0 ? 'color-green' : 'color-red'}">₹${parseFloat(net_pnl).toFixed(2)}</td></tr>`;
+                    });
+                    container.innerHTML = html + '</tbody></table>';
+                });
+        }
+
+        // --- Galaxy Particle Animation ---
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Particle {
+            constructor() {
+                this.reset();
+            }
+            reset() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2;
+                this.speedX = (Math.random() - 0.5) * 0.4;
+                this.speedY = (Math.random() - 0.5) * 0.4;
+                this.opacity = Math.random() * 0.8;
+                this.fadeSpeed = Math.random() * 0.02 + 0.005;
+                this.fadingIn = true;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+
+                // Wrap around screen
+                if (this.x > canvas.width) this.x = 0;
+                else if (this.x < 0) this.x = canvas.width;
+                if (this.y > canvas.height) this.y = 0;
+                else if (this.y < 0) this.y = canvas.height;
+
+                // Twinkle effect
+                if (this.fadingIn) {
+                    this.opacity += this.fadeSpeed;
+                    if (this.opacity >= 1) {
+                        this.opacity = 1;
+                        this.fadingIn = false;
+                    }
+                } else {
+                    this.opacity -= this.fadeSpeed;
+                    if (this.opacity <= 0.1) {
+                        this.opacity = 0.1;
+                        this.fadingIn = true;
+                    }
+                }
+            }
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity})`;
+                ctx.shadowBlur = 4;
+                ctx.shadowColor = "white";
+                ctx.fill();
+            }
+        }
+
+        function initParticles() {
+            particles = [];
+            for (let i = 0; i < 120; i++) {
+                particles.push(new Particle());
+            }
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            requestAnimationFrame(animateParticles);
+        }
+
+        initParticles();
+        animateParticles();
+        // -------------------------------
+
+        window.addEventListener('load', function () {
+            const dbSelect = document.getElementById('dbSelect');
+            dbSelect.addEventListener('change', function () {
+                clearInterval(updateInterval);
+                loadData();
+                if (this.value !== "") {
+                    updateInterval = setInterval(loadData, 3000);
+                }
+            });
+            // Auto-trigger initial load
+            loadData();
+            updateInterval = setInterval(loadData, 3000);
+        });
+    </script>
+</body>
+
+</html>

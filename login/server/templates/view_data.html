@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>View Data - {{ db_name }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #6c5ce7;
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        .back-btn {
+            padding: 10px 20px;
+            background: #666;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+
+<body>
+    <a href="/" class="back-btn">← Back to Dashboard</a>
+    <h1>{{ db_name.replace('_', ' ').title() }}</h1>
+
+    {% if error %}
+    <p class="error">{{ error }}</p>
+    {% else %}
+    <table>
+        <thead>
+            <tr>
+                {% for col in columns %}
+                <th>{{ col }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+            <tr>
+                {% for cell in row %}
+                <td>
+                    {% if loop.index0 == row|length - 1 and 'view_button' in columns %}
+                    <!-- Logic for view button if needed, but the cell content 'View' is handled in python -->
+                    {% if cell == 'View' %}
+                    <a href="http://localhost:5001/session_details/{{ row[1] }}/{{ row[3].split(' ')[0] if row[3] else '' }}">View
+                        Details</a>
+                    {% else %}
+                    {{ cell }}
+                    {% endif %}
+                    {% else %}
+                    {{ cell }}
+                    {% endif %}
+                </td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+</body>
+
+</html>
