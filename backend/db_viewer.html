@@ -1,609 +1,637 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
     <title>Database Viewer</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-dark: #030014;
-            --glass-bg: rgba(17, 25, 40, 0.6);
-            --glass-border: rgba(255, 255, 255, 0.08);
-            --text-primary: #f8fafc;
-            --text-secondary: #94a3b8;
-            --accent-primary: #a855f7;
-            --accent-secondary: #06b6d4;
-            --success: #10b981;
-            --danger: #ef4444;
+            --bg:        #030014;
+            --glass:     rgba(17,25,40,0.65);
+            --border:    rgba(255,255,255,0.08);
+            --purple:    #a855f7;
+            --cyan:      #06b6d4;
+            --green:     #10b981;
+            --red:       #ef4444;
+            --text:      #f8fafc;
+            --muted:     #94a3b8;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 
         body {
             font-family: 'Outfit', sans-serif;
-            background-color: var(--bg-dark);
+            background: var(--bg);
             background-image:
-                radial-gradient(circle at 10% 20%, rgba(76, 29, 149, 0.4) 0%, transparent 50%),
-                radial-gradient(circle at 90% 80%, rgba(124, 58, 237, 0.3) 0%, transparent 50%),
-                radial-gradient(circle at 50% 50%, rgba(30, 27, 75, 0.5) 0%, transparent 60%),
-                radial-gradient(circle at 80% 10%, rgba(236, 72, 153, 0.15) 0%, transparent 40%);
+                radial-gradient(circle at 15% 25%, rgba(76,29,149,.45) 0%, transparent 50%),
+                radial-gradient(circle at 85% 75%, rgba(6,182,212,.25)  0%, transparent 50%),
+                radial-gradient(circle at 80% 10%, rgba(236,72,153,.1)  0%, transparent 40%);
             min-height: 100vh;
-            padding: 40px;
-            color: var(--text-primary);
+            color: var(--text);
             background-attachment: fixed;
+            overflow-x: hidden;
         }
 
-        .container {
-            max-width: 100%;
+        /* ── PARTICLE CANVAS ─────────────────────── */
+        #bg-canvas {
+            position: fixed; inset: 0;
+            z-index: 0; pointer-events: none;
+        }
+
+        /* ── PAGE WRAPPER ────────────────────────── */
+        .wrap {
+            position: relative; z-index: 1;
+            max-width: 1400px;
             margin: 0 auto;
+            padding: 32px 40px 60px;
         }
 
+        /* ── HEADER ──────────────────────────────── */
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 40px;
+            margin-bottom: 26px;
         }
-
-        .title {
-            font-size: 2.5rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #fff 0%, #cbd5e1 100%);
+        .logo {
+            display: flex; align-items: center; gap: 14px;
+        }
+        .logo-icon {
+            width: 48px; height: 48px; border-radius: 13px;
+            background: linear-gradient(135deg, var(--purple), var(--cyan));
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 0 22px rgba(168,85,247,.45);
+            flex-shrink: 0;
+        }
+        .logo-icon svg { width:26px; height:26px; }
+        .logo-text {
+            font-size: 2rem; font-weight: 800;
+            background: linear-gradient(135deg,#fff 0%,#cbd5e1 100%);
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            text-shadow: 0 0 30px rgba(255, 255, 255, 0.1);
         }
-
         .back-btn {
-            background: rgba(255, 255, 255, 0.05);
-            color: var(--text-primary);
-            border: 1px solid var(--glass-border);
-            padding: 12px 24px;
-            border-radius: 12px;
+            padding: 10px 22px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: rgba(255,255,255,.06);
+            color: var(--text);
+            font: 600 .9rem 'Outfit', sans-serif;
             cursor: pointer;
-            font-weight: 600;
-            font-family: inherit;
-            transition: all 0.3s ease;
             backdrop-filter: blur(10px);
+            transition: all .25s;
         }
-
         .back-btn:hover {
-            background: rgba(255, 255, 255, 0.1);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            background: rgba(255,255,255,.13);
+            border-color: rgba(168,85,247,.45);
+            transform: translateY(-1px);
         }
 
-        .dropdown-container {
-            margin-bottom: 30px;
-            display: flex;
-            align-items: flex-end;
-            gap: 30px;
+        /* ── USER BANNER (session only) ──────────── */
+        .user-banner {
+            display: none;              /* shown via JS only for session tab */
+            align-items: stretch;
+            margin-bottom: 22px;
+            border-radius: 16px;
+            border: 1px solid rgba(168,85,247,.28);
+            background: linear-gradient(135deg,
+                rgba(168,85,247,.1) 0%,
+                rgba(6,182,212,.07) 100%);
+            backdrop-filter: blur(20px);
+            box-shadow: 0 4px 30px rgba(168,85,247,.08),
+                        inset 0 1px 0 rgba(255,255,255,.07);
+            overflow: hidden;
+            position: relative;
         }
-
-        .select-wrapper {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
+        .user-banner::after {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg,
+                transparent,
+                rgba(168,85,247,.75),
+                rgba(6,182,212,.75),
+                transparent);
         }
-
-        .dropdown-label {
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+        .banner-avatar {
+            width: 68px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.7rem;
+            background: linear-gradient(180deg,
+                rgba(168,85,247,.25),
+                rgba(6,182,212,.15));
+            border-right: 1px solid rgba(255,255,255,.06);
+            flex-shrink: 0;
         }
+        .banner-fields {
+            display: flex; flex: 1;
+        }
+        .banner-field {
+            flex: 1;
+            padding: 18px 24px;
+            display: flex; flex-direction: column; gap: 5px;
+            border-right: 1px solid rgba(255,255,255,.05);
+        }
+        .banner-field:last-child { border-right: none; }
+        .bf-label {
+            font-size: .67rem; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 1.4px;
+            color: var(--muted);
+        }
+        .bf-val {
+            font-size: 1.05rem; font-weight: 700; letter-spacing: .3px;
+        }
+        .bv-kotak  { color: var(--purple); }
+        .bv-client { color: var(--cyan); }
+        .bv-name   { color: var(--text); }
+        .bv-date   { color: var(--green); }
+        .loading {
+            color: var(--muted); font-weight: 400; font-size: .85rem;
+            animation: fadePulse 1.5s infinite;
+        }
+        @keyframes fadePulse { 0%,100%{opacity:1} 50%{opacity:.3} }
 
+        /* ── CONTROLS ROW ────────────────────────── */
+        .controls {
+            display: flex; align-items: flex-end;
+            gap: 20px; flex-wrap: wrap;
+            margin-bottom: 22px;
+        }
+        .ctrl-group { display: flex; flex-direction: column; gap: 8px; }
+        .ctrl-label {
+            font-size: .7rem; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 1.2px;
+            color: var(--muted);
+        }
         select {
-            width: 300px;
-            padding: 14px 20px;
-            border: 1px solid var(--glass-border);
+            width: 220px; padding: 12px 18px;
+            border: 1px solid var(--border);
             border-radius: 12px;
-            font-size: 16px;
-            background: var(--glass-bg);
-            color: var(--text-primary);
+            font: 500 .95rem 'Outfit', sans-serif;
+            background: var(--glass);
+            color: var(--text);
             cursor: pointer;
-            font-family: inherit;
             backdrop-filter: blur(12px);
             outline: none;
-            transition: border-color 0.3s;
+            transition: border-color .25s;
+            -webkit-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2394a3b8' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
         }
+        select:focus { border-color: var(--purple); }
+        select option { background: #0f172a; }
 
-        select:focus {
-            border-color: var(--accent-primary);
+        /* ── STAT CARDS ──────────────────────────── */
+        .stat-cards {
+            display: none;
+            gap: 14px;
         }
-
-        select option {
-            background: var(--bg-dark);
-            color: var(--text-primary);
-        }
-
-        #sessionStats {
-            display: flex;
-            gap: 20px;
-            align-items: center;
-        }
-
-        #sessionStats>div {
-            background: var(--glass-bg);
-            padding: 14px 24px;
-            border-radius: 12px;
-
-            /* Match User Session Dropdown Highlight */
-            border: 1px solid var(--accent-primary);
-            box-shadow: 0 0 15px rgba(168, 85, 247, 0.15);
-            /* Subtle purple glow */
-
+        .s-card {
+            padding: 14px 22px; min-width: 140px;
+            background: var(--glass);
+            border: 1px solid var(--border);
+            border-radius: 14px;
             backdrop-filter: blur(12px);
+            display: flex; flex-direction: column; gap: 5px;
+            position: relative; overflow: hidden;
         }
-
-        .stat-label {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            display: block;
-            margin-bottom: 4px;
+        .s-card::before {
+            content:'';
+            position:absolute; top:0; left:0; right:0; height:2px;
+            background: linear-gradient(90deg, var(--purple), var(--cyan));
         }
-
-        .stat-value {
-            font-size: 1.4rem;
-            font-weight: 700;
-            color: var(--text-primary);
+        .s-label {
+            font-size:.68rem; font-weight:600;
+            text-transform:uppercase; letter-spacing:1.2px;
+            color: var(--muted);
+        }
+        .s-val {
+            font-size: 1.55rem; font-weight: 800;
             font-variant-numeric: tabular-nums;
         }
+        .c-green { color: var(--green) !important; }
+        .c-red   { color: var(--red)   !important; }
 
-        .data-container {
-            background: var(--glass-bg);
-            border-radius: 20px;
-            padding: 30px;
-            height: 650px;
-            border: 1px solid var(--glass-border);
+        /* ── DATA CONTAINER ──────────────────────── */
+        .data-box {
+            background: var(--glass);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            min-height: 420px;
             overflow: auto;
             position: relative;
             backdrop-filter: blur(20px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 8px 40px rgba(0,0,0,.35);
         }
+        .data-box::-webkit-scrollbar { width:6px; height:6px; }
+        .data-box::-webkit-scrollbar-track { background:rgba(0,0,0,.2); border-radius:3px; }
+        .data-box::-webkit-scrollbar-thumb { background:rgba(168,85,247,.3); border-radius:3px; }
+        .data-box::-webkit-scrollbar-thumb:hover { background:rgba(168,85,247,.5); }
 
-        .data-container::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
+        /* ── AUTO-UPDATE BAR ─────────────────────── */
+        .auto-bar {
+            display: flex; align-items: center; gap: 8px;
+            padding: 11px 20px;
+            border-bottom: 1px solid var(--border);
+            font-size: .77rem; color: var(--muted);
         }
-
-        .data-container::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 4px;
+        .dot {
+            width:7px; height:7px; border-radius:50%;
+            background: var(--green);
+            box-shadow: 0 0 7px var(--green);
+            animation: blink 2s infinite;
         }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
 
-        .data-container::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 4px;
-        }
-
-        .data-container::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
+        /* ── TABLE ───────────────────────────────── */
+        table { width:100%; border-collapse:collapse; }
         thead th {
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            background: rgba(255, 255, 255, 0.12);
-            /* Match table cell background */
+            position: sticky; top:0; z-index:10;
+            background: rgba(168,85,247,.13);
             backdrop-filter: blur(10px);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-        }
-
-        .no-data {
-            text-align: center;
-            color: var(--text-secondary);
-            font-size: 1.2rem;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .no-data::before {
-            content: '📊';
-            font-size: 3rem;
-            opacity: 0.5;
-            filter: grayscale(1);
-        }
-
-        table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-            margin-top: 5px;
-        }
-
-        th,
-        td {
             padding: 16px 20px;
-            text-align: left;
-            border-bottom: 1px solid var(--glass-border);
-            font-size: 14px;
+            font-size: .74rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 1.5px;
+            color: #fff;
+            border-bottom: 1px solid rgba(168,85,247,.3);
+            text-align: left; white-space: nowrap;
+            text-shadow: 0 0 10px rgba(168,85,247,.6);
         }
+        thead th:first-child { text-align:center; width:60px; }
 
-        /* Shiny Animated Table Header */
-        /* Shiny Animated Table Header */
-        /* Shiny Animated Table Header */
-        th {
-            color: #ffffff;
-            /* Explicit White */
-            font-weight: 800;
-            /* Extra Bold */
-            text-transform: uppercase;
-            font-size: 0.85rem;
-            letter-spacing: 1.5px;
-
-            /* Uniform Light Background */
-            background: rgba(255, 255, 255, 0.12);
-
-            /* Shiny Glow Effect */
-            text-shadow:
-                0 0 5px rgba(168, 85, 247, 0.8),
-                0 0 10px rgba(168, 85, 247, 0.5),
-                0 0 20px rgba(255, 255, 255, 0.4);
-
-            border-bottom: 2px solid #a855f7;
-            /* Purple accent border */
-            padding: 18px 20px;
-            white-space: nowrap;
+        tbody tr {
+            border-bottom: 1px solid rgba(255,255,255,.04);
+            transition: background .2s;
         }
-
-        /* Shine Animation on hover */
-        th:hover {
-            background: rgba(255, 255, 255, 0.18);
-            /* Brighter on hover */
-            color: #cbd5e1;
-            text-shadow:
-                0 0 8px rgba(168, 85, 247, 1),
-                0 0 15px rgba(255, 255, 255, 0.6);
-            transition: all 0.3s ease;
-        }
-
-        /* Particle Canvas */
-        #bg-canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            pointer-events: none;
-        }
+        tbody tr:last-child { border-bottom:none; }
+        tbody tr:hover { background: rgba(168,85,247,.05); }
 
         td {
-            color: var(--text-primary);
-            background: rgba(255, 255, 255, 0.12);
-            /* Uniform Light Background for ALL cells */
-            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 15px 20px;
+            font-size: .9rem;
+            color: var(--text);
+            vertical-align: middle;
+        }
+        td:first-child {
+            text-align:center;
+            font-size:.8rem; font-weight:700;
+            color: var(--muted);
         }
 
-        /* Sl. No. Column Highlight - Kept bold but background is transparent to use td's background */
-        td:first-child,
-        th:first-child {
-            font-weight: 700;
-            text-align: center;
-            border-right: 1px solid var(--glass-border);
-            /* Removed specific background to ensure uniformity */
+        /* badges */
+        .badge-active {
+            display: inline-flex; align-items:center; gap:5px;
+            background: rgba(16,185,129,.14);
+            border: 1px solid rgba(16,185,129,.3);
+            color: var(--green);
+            padding: 3px 10px; border-radius:20px;
+            font-size:.78rem; font-weight:700;
+        }
+        .badge-active::before {
+            content:''; width:6px; height:6px; border-radius:50%;
+            background: var(--green);
+            box-shadow: 0 0 6px var(--green);
+            animation: blink 1.5s infinite;
+        }
+        .badge-paper {
+            display:inline-block; padding:3px 10px; border-radius:6px;
+            font-size:.78rem; font-weight:700; letter-spacing:.5px;
+            background: rgba(59,130,246,.15);
+            color: #60a5fa;
+            border: 1px solid rgba(59,130,246,.25);
+        }
+        .badge-live {
+            display:inline-block; padding:3px 10px; border-radius:6px;
+            font-size:.78rem; font-weight:700; letter-spacing:.5px;
+            background: rgba(251,191,36,.15);
+            color: #fbbf24;
+            border: 1px solid rgba(251,191,36,.25);
         }
 
-        th:first-child {
-            border-top-left-radius: 12px;
-        }
+        .win-val  { font-weight:700; color: var(--green); }
+        .loss-val { font-weight:700; color: var(--red); }
+        .pnl-val  { font-weight:700; font-size:.95rem; font-variant-numeric:tabular-nums; }
 
-        tr {
-            transition: transform 0.2s, background-color 0.2s;
+        /* ── EMPTY STATE ─────────────────────────── */
+        .empty {
+            display:flex; flex-direction:column;
+            align-items:center; justify-content:center;
+            gap:14px; min-height:380px;
+            color: var(--muted);
         }
-
-        tr:hover td {
-            background: rgba(255, 255, 255, 0.12) !important;
-            /* Brighter on hover */
-            transform: scale(1.01);
-            /* Subtle pop */
-            z-index: 1;
-        }
-
-        .active-status {
-            color: var(--success);
-            font-weight: 600;
-            background: rgba(16, 185, 129, 0.1);
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-        }
-
-        /* P&L Colors */
-        .color-green {
-            color: var(--success) !important;
-            font-weight: 600;
-        }
-
-        .color-red {
-            color: var(--danger) !important;
-            font-weight: 600;
-        }
+        .empty-icon { font-size:3.2rem; opacity:.3; filter:grayscale(1); }
+        .empty-msg  { font-size:1.05rem; font-weight:500; }
+        .empty-sub  { font-size:.83rem; opacity:.65; }
     </style>
 </head>
-
 <body>
-    <canvas id="bg-canvas"></canvas>
-    <div class="container">
-        <div class="header">
-            <h1 class="title">
-                <!-- Database SVG Icon -->
-                <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="url(#iconGradient)" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round"
-                    style="filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.5));">
-                    <defs>
-                        <linearGradient id="iconGradient" x1="0" y1="0" x2="1" y2="1">
-                            <stop offset="0%" stop-color="#a855f7" />
-                            <stop offset="100%" stop-color="#22d3ee" />
-                        </linearGradient>
-                    </defs>
-                    <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
-                    <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
-                    <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+<canvas id="bg-canvas"></canvas>
+
+<div class="wrap">
+
+    <!-- HEADER -->
+    <div class="header">
+        <div class="logo">
+            <div class="logo-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                    <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+                    <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
                 </svg>
-                <span
-                    style="background: linear-gradient(135deg, #fff, #e2e8f0); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Database
-                    Viewer</span>
-            </h1>
-            <button class="back-btn" onclick="window.close()">← Back</button>
-        </div>
-        <div class="dropdown-container">
-            <div class="select-wrapper">
-                <div class="dropdown-label">Select Database:</div>
-                <select id="dbSelect">
-                    <option value="signup">Signup Data</option>
-                    <option value="session">User Session Data</option>
-                </select>
             </div>
-            <div id="sessionStats" style="display: none;">
-                <div>
-                    <span class="stat-label">Total Sessions</span>
-                    <span id="totalSessionsDisplay" class="stat-value">0</span>
-                </div>
-                <div>
-                    <span class="stat-label">Total Trades</span>
-                    <span id="totalTradesDisplay" class="stat-value">0</span>
-                </div>
-                <div>
-                    <span class="stat-label">Total Net P&L</span>
-                    <span id="totalPnlDisplay" class="stat-value">₹0.00</span>
-                </div>
-            </div>
+            <span class="logo-text">Database Viewer</span>
         </div>
-        <div id="dataContainer" class="data-container">
-            <div class="no-data">📈<br><br>Select a database to view data</div>
+        <button class="back-btn" onclick="window.close()">&#8592; Back</button>
+    </div>
+
+    <!-- USER BANNER — shown only on "User Session Data" tab -->
+    <div class="user-banner" id="userBanner">
+        <div class="banner-avatar">&#128100;</div>
+        <div class="banner-fields">
+            <div class="banner-field">
+                <div class="bf-label">&#128274; Kotak ID</div>
+                <div class="bf-val bv-kotak" id="bKotak"><span class="loading">Loading…</span></div>
+            </div>
+            <div class="banner-field">
+                <div class="bf-label">&#127991; Client ID</div>
+                <div class="bf-val bv-client" id="bClient"><span class="loading">Loading…</span></div>
+            </div>
+            <div class="banner-field">
+                <div class="bf-label">&#128100; Name</div>
+                <div class="bf-val bv-name" id="bName"><span class="loading">Loading…</span></div>
+            </div>
+            <div class="banner-field">
+                <div class="bf-label">&#128197; Date</div>
+                <div class="bf-val bv-date" id="bDate">&mdash;</div>
+            </div>
         </div>
     </div>
 
-    <script>
-        let updateInterval;
+    <!-- CONTROLS -->
+    <div class="controls">
+        <div class="ctrl-group">
+            <div class="ctrl-label">Select Database</div>
+            <select id="dbSelect">
+                <option value="signup">Signup Data</option>
+                <option value="session">User Session Data</option>
+            </select>
+        </div>
 
-        function loadData() {
-            const select = document.getElementById('dbSelect');
-            const value = select.value;
-            const container = document.getElementById('dataContainer');
-            const sessionStats = document.getElementById('sessionStats');
+        <!-- stat cards — session only -->
+        <div class="stat-cards" id="statCards">
+            <div class="s-card">
+                <div class="s-label">Total Sessions</div>
+                <div class="s-val" id="statSessions">0</div>
+            </div>
+            <div class="s-card">
+                <div class="s-label">Total Trades</div>
+                <div class="s-val" id="statTrades">0</div>
+            </div>
+            <div class="s-card">
+                <div class="s-label">Total Net P&amp;L</div>
+                <div class="s-val c-green" id="statPnl">&#8377;0.00</div>
+            </div>
+        </div>
+    </div>
 
-            if (!value) {
-                clearInterval(updateInterval);
-                container.innerHTML = '<div class="no-data">📈<br><br>Select a database to view data</div>';
-                sessionStats.style.display = 'none';
-                return;
-            }
+    <!-- DATA AREA -->
+    <div class="data-box" id="dataBox">
+        <div class="empty">
+            <div class="empty-icon">&#128202;</div>
+            <div class="empty-msg">No data selected</div>
+            <div class="empty-sub">Choose a database from the dropdown above</div>
+        </div>
+    </div>
 
-            sessionStats.style.display = (value === 'session') ? 'flex' : 'none';
+</div>
 
-            if (value === 'signup') {
-                // Fixed: Port 5001 for Login Server
-                fetch(`http://127.0.0.1:5001/api/get-signup-data?t=${new Date().getTime()}`)
-                    .then(r => r.json())
-                    .then(data => updateSignupTable(data, container))
-                    .catch(err => {
-                        container.innerHTML = '<div class="no-data">❌ Error loading signup data from port 5001</div>';
-                    });
-            } else if (value === 'session') {
-                const url = `${window.location.origin}/api/sessions?t=${new Date().getTime()}`;
+<script>
+/* ─── helpers ─────────────────────────── */
+function emptyHTML(msg, sub = '') {
+    return `<div class="empty">
+        <div class="empty-icon">&#128202;</div>
+        <div class="empty-msg">${msg}</div>
+        ${sub ? `<div class="empty-sub">${sub}</div>` : ''}
+    </div>`;
+}
 
-                fetch(url)
-                    .then(r => r.json())
-                    .then(data => updateSessionTable(data, container))
-                    .catch(err => {
-                        container.innerHTML = '<div class="no-data">❌ Error loading sessions</div>';
-                    });
-            }
+/* ─── banner loader ───────────────────── */
+async function loadBanner() {
+    // Date (always instant)
+    document.getElementById('bDate').textContent =
+        new Date().toLocaleDateString('en-IN',
+            { weekday:'short', day:'2-digit', month:'short', year:'numeric' });
+
+    // Kotak ID + Name  →  backend /api/users/active
+    try {
+        const r = await fetch(window.location.origin + '/api/users/active');
+        if (r.ok) {
+            const u = await r.json();
+            document.getElementById('bKotak').textContent =
+                (u.description || '').replace('Kotak UCC: ','') || u.id || '—';
+            document.getElementById('bName').textContent  = u.name || '—';
+        } else throw 0;
+    } catch {
+        document.getElementById('bKotak').textContent = '—';
+        document.getElementById('bName').textContent  = '—';
+    }
+
+    // Client ID  →  login server :5001/api/get-signup-data
+    try {
+        const r2 = await fetch('http://127.0.0.1:5001/api/get-signup-data');
+        if (r2.ok) {
+            const users = await r2.json();
+            document.getElementById('bClient').textContent =
+                users?.length ? (users[0].client_id || users[0].clientId || '—') : '—';
+        } else throw 0;
+    } catch {
+        document.getElementById('bClient').textContent = '—';
+    }
+}
+
+/* ─── main load ───────────────────────── */
+let ticker;
+
+function loadData() {
+    const val    = document.getElementById('dbSelect').value;
+    const box    = document.getElementById('dataBox');
+    const banner = document.getElementById('userBanner');
+    const cards  = document.getElementById('statCards');
+
+    const isSession = val === 'session';
+    banner.style.display = isSession ? 'flex' : 'none';
+    cards.style.display  = isSession ? 'flex' : 'none';
+
+    if (!val) {
+        box.innerHTML = emptyHTML('Select a database to view data');
+        return;
+    }
+
+    if (val === 'signup') {
+        fetch(`http://127.0.0.1:5001/api/get-signup-data?t=${Date.now()}`)
+            .then(r => r.json())
+            .then(d => renderSignup(d, box))
+            .catch(()=> { box.innerHTML = emptyHTML('&#10060; Login server unreachable',
+                                                    'Make sure the login server is running on port 5001'); });
+    } else {
+        fetch(`${window.location.origin}/api/sessions?t=${Date.now()}`)
+            .then(r => r.json())
+            .then(d => renderSession(d, box))
+            .catch(()=> { box.innerHTML = emptyHTML('&#10060; Error loading session data'); });
+    }
+}
+
+/* ─── signup table ────────────────────── */
+function renderSignup(data, box) {
+    if (!data?.length) { box.innerHTML = emptyHTML('No signup records found'); return; }
+
+    const ts = new Date().toLocaleTimeString();
+    let h = `<div class="auto-bar"><div class="dot"></div>Auto-updating &nbsp;·&nbsp; ${ts}</div>
+             <table><thead><tr>
+               <th>#</th>
+               <th>Client ID</th><th>Name</th><th>Email</th>
+               <th>Phone</th><th>Aadhar</th><th>QR Key</th><th>Username</th>
+             </tr></thead><tbody>`;
+
+    data.forEach((u, i) => {
+        h += `<tr>
+            <td>${i+1}</td>
+            <td style="color:var(--cyan);font-weight:700;">${u.client_id||u.clientId||'—'}</td>
+            <td style="font-weight:600;">${(u.firstName||'')} ${(u.lastName||'')}</td>
+            <td style="color:var(--muted);">${u.email||'—'}</td>
+            <td>${u.mobile||'—'}</td>
+            <td style="font-family:monospace;font-size:.82rem;">${u.aadhar||'—'}</td>
+            <td style="font-family:monospace;font-size:.8rem;color:var(--purple);">${u.qr_key||'—'}</td>
+            <td style="color:var(--muted);">${u.username||'—'}</td>
+        </tr>`;
+    });
+    box.innerHTML = h + '</tbody></table>';
+}
+
+/* ─── session table ───────────────────── */
+function renderSession(data, box) {
+    if (!data?.length) {
+        box.innerHTML = emptyHTML('No sessions recorded yet',
+                                  'Sessions are created each time the bot starts and stops');
+        ['statSessions','statTrades'].forEach(id => document.getElementById(id).textContent = '0');
+        const pe = document.getElementById('statPnl');
+        pe.textContent = '₹0.00'; pe.className = 's-val c-green';
+        return;
+    }
+
+    // totals
+    let gTrades = 0, gPnl = 0;
+    data.forEach(s => {
+        gTrades += parseInt(s.total_trades) || 0;
+        gPnl    += parseFloat(s.pnl)        || 0;
+    });
+
+    document.getElementById('statSessions').textContent = data.length;
+    document.getElementById('statTrades').textContent   = gTrades;
+    const pe = document.getElementById('statPnl');
+    pe.textContent = `₹${gPnl.toFixed(2)}`;
+    pe.className   = `s-val ${gPnl >= 0 ? 'c-green' : 'c-red'}`;
+
+    const ts = new Date().toLocaleTimeString();
+    let h = `<div class="auto-bar"><div class="dot"></div>Auto-updating &nbsp;·&nbsp; ${ts}</div>
+             <table><thead><tr>
+               <th>#</th>
+               <th>Login</th>
+               <th>Logout</th>
+               <th>Mode</th>
+               <th>Trades</th>
+               <th>Win</th>
+               <th>Loss</th>
+               <th>Net P&amp;L</th>
+             </tr></thead><tbody>`;
+
+    data.forEach((s, i) => {
+        const live   = !s.logout_time || s.logout_time === 'null' || s.logout_time === 'None' || s.logout_time === '' || s.logout_time === 'NaT';
+        const trades = s.total_trades || 0;
+        const wins   = s.wins || 0;
+        const losses = s.losses || 0;
+        const pnl    = s.pnl || 0;
+
+        const loginFmt = s.login_time
+            ? new Date(s.login_time).toLocaleTimeString() : '—';
+
+        let logoutFmt;
+        if (live) {
+            logoutFmt = '<span class="badge-active">Active</span>';
+        } else {
+            const d = new Date(s.logout_time);
+            logoutFmt = isNaN(d) ? '—' : d.toLocaleTimeString();
         }
 
-        function updateSignupTable(data, container) {
-            if (!data || data.length === 0) {
-                container.innerHTML = '<div class="no-data">No signup data found</div>';
-                return;
-            }
-            let html = `<p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 15px;">🔄 Auto-updating... (Last checked: ${new Date().toLocaleTimeString()})</p>`;
-            html += '<table><thead><tr><th>ID</th><th>Client ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Aadhar</th><th>QR Key</th><th>Username</th><th>Created At</th></tr></thead><tbody>';
-            data.forEach((user, index) => {
-                html += `<tr><td>${index + 1}</td><td>${user.clientId || user.client_id || '-'}</td><td>${user.firstName || ''} ${user.lastName || ''}</td><td>${user.email || '-'}</td><td>${user.mobile || '-'}</td><td>${user.aadhar || '-'}</td><td>${user.qr_key || '-'}</td><td>${user.username || '-'}</td><td>${user.created_at || '-'}</td></tr>`;
-            });
-            container.innerHTML = html + '</tbody></table>';
-        }
+        const mode = (s.mode||'PAPER').toUpperCase();
+        const modeBadge = `<span class="${mode==='LIVE'?'badge-live':'badge-paper'}">${mode}</span>`;
+        const pnlCls = pnl >= 0 ? 'c-green' : 'c-red';
 
-        function updateSessionTable(data, container) {
-            if (!data || data.length === 0) {
-                container.innerHTML = '<div class="no-data">📈 No sessions found</div>';
-                document.getElementById('totalSessionsDisplay').innerText = '0';
-                document.getElementById('totalTradesDisplay').innerText = '0';
-                document.getElementById('totalPnlDisplay').innerText = '₹0.00';
-                return;
-            }
+        h += `<tr>
+            <td>${i+1}</td>
+            <td style="font-variant-numeric:tabular-nums;">${loginFmt}</td>
+            <td>${logoutFmt}</td>
+            <td>${modeBadge}</td>
+            <td style="font-weight:700;">${trades}</td>
+            <td class="win-val">${wins}</td>
+            <td class="loss-val">${losses}</td>
+            <td class="pnl-val ${pnlCls}">&#8377;${parseFloat(pnl).toFixed(2)}</td>
+        </tr>`;
+    });
 
-            // Fetch live performance for the active session, then render
-            fetch(`${window.location.origin}/api/performance?t=${new Date().getTime()}`)
-                .then(r => r.json())
-                .catch(() => ({ trades_today: 0, net_pnl: 0 }))
-                .then(perf => {
-                    let grandTotalPnl = 0;
-                    let grandTotalTrades = 0;
+    box.innerHTML = h + '</tbody></table>';
+}
 
-                    data.forEach(s => {
-                        if (!s.logout_time) {
-                            // active session: use live perf
-                            grandTotalTrades += parseInt(perf.trades_today) || 0;
-                            grandTotalPnl += parseFloat(perf.net_pnl) || 0;
-                        } else {
-                            grandTotalTrades += parseInt(s.total_trades) || 0;
-                            grandTotalPnl += parseFloat(s.pnl) || 0;
-                        }
-                    });
+/* ─── particles ───────────────────────── */
+const cv  = document.getElementById('bg-canvas');
+const ctx = cv.getContext('2d');
+const resize = () => { cv.width = innerWidth; cv.height = innerHeight; };
+window.addEventListener('resize', resize); resize();
 
-                    const grandTotalSessions = data.length;
+const particles = Array.from({length:130}, () => ({
+    x: Math.random()*innerWidth,  y: Math.random()*innerHeight,
+    vx:(Math.random()-.5)*.35,    vy:(Math.random()-.5)*.35,
+    r: Math.random()*1.8,
+    o: Math.random()*.7,          f: Math.random()*.015+.005,
+    up: true
+}));
 
-                    document.getElementById('totalSessionsDisplay').innerText = grandTotalSessions;
-                    document.getElementById('totalTradesDisplay').innerText = grandTotalTrades;
-                    const pnlDisplay = document.getElementById('totalPnlDisplay');
-                    pnlDisplay.innerText = `₹${grandTotalPnl.toFixed(2)}`;
-                    pnlDisplay.className = `stat-value ${grandTotalPnl >= 0 ? 'color-green' : 'color-red'}`;
-                    pnlDisplay.style.color = '';
+(function frame() {
+    ctx.clearRect(0,0,cv.width,cv.height);
+    particles.forEach(p => {
+        p.x += p.vx; p.y += p.vy;
+        if (p.x > cv.width)  p.x = 0;
+        if (p.x < 0)         p.x = cv.width;
+        if (p.y > cv.height) p.y = 0;
+        if (p.y < 0)         p.y = cv.height;
+        p.up ? (p.o += p.f, p.o>=.85 && (p.up=false))
+             : (p.o -= p.f, p.o<=.08 && (p.up=true));
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+        ctx.fillStyle   = `rgba(255,255,255,${p.o})`;
+        ctx.shadowBlur  = 4;
+        ctx.shadowColor = 'white';
+        ctx.fill();
+    });
+    requestAnimationFrame(frame);
+})();
 
-                    let html = `<p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 15px;">🔄 Auto-updating... (Last checked: ${new Date().toLocaleTimeString()})</p>`;
-                    html += '<table><thead><tr><th>S.No</th><th>Kotak ID</th><th>Client ID</th><th>Name</th><th>Date</th><th>Login</th><th>Logout</th><th>Mode</th><th>Trades</th><th>Net P&L</th></tr></thead><tbody>';
+/* ─── init ────────────────────────────── */
+window.addEventListener('load', () => {
+    loadBanner();
+    loadData();
+    ticker = setInterval(loadData, 3000);
 
-                    data.forEach((s, index) => {
-                        const isActive = !s.logout_time;
-                        // For active row, use live perf data instead of stale DB values
-                        const trades = isActive ? (parseInt(perf.trades_today) || 0) : (s.total_trades || 0);
-                        const net_pnl = isActive ? (parseFloat(perf.net_pnl) || 0) : (s.pnl || 0);
-                        const kotakUcc = s.client_id || '-';
-                        const signupId = s.signup_client_id || '-';
-                        const name = s.name || '-';
-                        const date = s.date || new Date(s.login_time).toLocaleDateString() || '-';
-                        const loginTime = s.login_time;
-                        const logoutTime = s.logout_time;
-                        const mode = s.mode || 'UNKNOWN';
-
-                        html += '<tr>';
-                        html += `<td>${index + 1}</td><td>${kotakUcc}</td><td>${signupId}</td><td>${name}</td><td>${date}</td>`;
-                        html += `<td>${loginTime ? new Date(loginTime).toLocaleTimeString() : '-'}</td>`;
-                        const logoutDisplay = logoutTime ? new Date(logoutTime) : null;
-                        const isValidLogout = logoutDisplay && !isNaN(logoutDisplay.getTime());
-                        html += `<td>${isValidLogout ? logoutDisplay.toLocaleTimeString() : '<span class="active-status">Active</span>'}</td>`;
-                        html += `<td>${mode}</td><td>${trades}</td>`;
-                        html += `<td class="${net_pnl >= 0 ? 'color-green' : 'color-red'}">₹${parseFloat(net_pnl).toFixed(2)}</td></tr>`;
-                    });
-                    container.innerHTML = html + '</tbody></table>';
-                });
-        }
-
-        // --- Galaxy Particle Animation ---
-        const canvas = document.getElementById('bg-canvas');
-        const ctx = canvas.getContext('2d');
-        let particles = [];
-
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
-
-        class Particle {
-            constructor() {
-                this.reset();
-            }
-            reset() {
-                this.x = Math.random() * canvas.width;
-                this.y = Math.random() * canvas.height;
-                this.size = Math.random() * 2;
-                this.speedX = (Math.random() - 0.5) * 0.4;
-                this.speedY = (Math.random() - 0.5) * 0.4;
-                this.opacity = Math.random() * 0.8;
-                this.fadeSpeed = Math.random() * 0.02 + 0.005;
-                this.fadingIn = true;
-            }
-            update() {
-                this.x += this.speedX;
-                this.y += this.speedY;
-
-                // Wrap around screen
-                if (this.x > canvas.width) this.x = 0;
-                else if (this.x < 0) this.x = canvas.width;
-                if (this.y > canvas.height) this.y = 0;
-                else if (this.y < 0) this.y = canvas.height;
-
-                // Twinkle effect
-                if (this.fadingIn) {
-                    this.opacity += this.fadeSpeed;
-                    if (this.opacity >= 1) {
-                        this.opacity = 1;
-                        this.fadingIn = false;
-                    }
-                } else {
-                    this.opacity -= this.fadeSpeed;
-                    if (this.opacity <= 0.1) {
-                        this.opacity = 0.1;
-                        this.fadingIn = true;
-                    }
-                }
-            }
-            draw() {
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity})`;
-                ctx.shadowBlur = 4;
-                ctx.shadowColor = "white";
-                ctx.fill();
-            }
-        }
-
-        function initParticles() {
-            particles = [];
-            for (let i = 0; i < 120; i++) {
-                particles.push(new Particle());
-            }
-        }
-
-        function animateParticles() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            particles.forEach(p => {
-                p.update();
-                p.draw();
-            });
-            requestAnimationFrame(animateParticles);
-        }
-
-        initParticles();
-        animateParticles();
-        // -------------------------------
-
-        window.addEventListener('load', function () {
-            const dbSelect = document.getElementById('dbSelect');
-            dbSelect.addEventListener('change', function () {
-                clearInterval(updateInterval);
-                loadData();
-                if (this.value !== "") {
-                    updateInterval = setInterval(loadData, 3000);
-                }
-            });
-            // Auto-trigger initial load
-            loadData();
-            updateInterval = setInterval(loadData, 3000);
-        });
-    </script>
+    document.getElementById('dbSelect').addEventListener('change', () => {
+        clearInterval(ticker);
+        loadData();
+        ticker = setInterval(loadData, 3000);
+    });
+});
+</script>
 </body>
-
 </html>

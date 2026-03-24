@@ -185,14 +185,14 @@ class TradingBotService:
                         trading_mode = self.strategy_instance.params.get('trading_mode', 'Paper Trading')
                         mode = 'LIVE' if trading_mode == 'Live Trading' else 'PAPER'
                     
-                    # Start time for session
-                    login_time = getattr(self, 'bot_start_time', now)
-
                     # Send the email!
                     if os.getenv('NOTIFICATION_EMAIL'):
+                        wins_count = sum(1 for t in trades_for_email if (t.get('net_pnl') or 0) > 0)
+                        losses_count = sum(1 for t in trades_for_email if (t.get('net_pnl') or 0) <= 0)
                         await asyncio.to_thread(
-                            EmailNotifier.send_logout_notification,
-                            ucc, name, ucc, mode, login_time, now, total_trades, net_pnl, trades_for_email
+                            EmailNotifier.send_daily_summary,
+                            ucc, name, ucc, mode, total_trades, net_pnl, current_date,
+                            wins_count, losses_count, trades_for_email
                         )
                         print(f"✅ Daily 15:31 summary email sent to {os.getenv('NOTIFICATION_EMAIL')}")
                     else:

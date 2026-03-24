@@ -203,6 +203,16 @@ class SessionLogger:
             conn.commit()
             
             if session:
+                # Build trades list for email
+                trades_list = []
+                try:
+                    if not all_trades_df.empty:
+                        check_col = 'net_pnl' if 'net_pnl' in all_trades_df.columns else 'pnl'
+                        s_trades = all_trades_df[time_mask & client_mask & mode_mask] if total_trades > 0 else pd.DataFrame()
+                        trades_list = s_trades.to_dict('records') if not s_trades.empty else []
+                except Exception:
+                    trades_list = []
+
                 # Send email notification
                 EmailNotifier.send_logout_notification(
                     client_id=session.signup_client_id or session.client_id,
@@ -212,7 +222,10 @@ class SessionLogger:
                     login_time=session.login_time,
                     logout_time=logout_time,
                     total_trades=total_trades,
-                    net_pnl=pnl
+                    net_pnl=pnl,
+                    wins=wins,
+                    losses=losses,
+                    trades=trades_list
                 )
                 
                 # Sync to Central (PC2)
