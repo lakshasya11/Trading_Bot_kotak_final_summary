@@ -957,7 +957,7 @@ async def db_viewer_page():
     return FileResponse(file_path, media_type="text/html")
 
 @app.get("/api/sessions")
-async def get_sessions_api(service: TradingBotService = Depends(get_bot_service)):
+async def get_sessions_api(show_all: bool = False, service: TradingBotService = Depends(get_bot_service)):
     active_ucc = _get_active_ucc_from_config()
 
     # If bot is running, refresh the active session's live stats before returning
@@ -967,11 +967,19 @@ async def get_sessions_api(service: TradingBotService = Depends(get_bot_service)
     def db_call():
         try:
             with today_engine.connect() as conn:
-                if active_ucc:
-                    query = text("SELECT * FROM bot_sessions WHERE client_id = :ucc ORDER BY login_time DESC")
-                    df_sessions = pd.read_sql_query(query, conn, params={"ucc": active_ucc})
+                if show_all:
+                    if active_ucc:
+                        query = text("SELECT * FROM bot_sessions WHERE client_id = :ucc ORDER BY login_time DESC")
+                        df_sessions = pd.read_sql_query(query, conn, params={"ucc": active_ucc})
+                    else:
+                        df_sessions = pd.read_sql_query("SELECT * FROM bot_sessions ORDER BY login_time DESC", conn)
                 else:
-                    df_sessions = pd.read_sql_query("SELECT * FROM bot_sessions ORDER BY login_time DESC", conn)
+                    # Filter for today's data only
+                    if active_ucc:
+                        query = text("SELECT * FROM bot_sessions WHERE client_id = :ucc AND date = CURRENT_DATE ORDER BY login_time DESC")
+                        df_sessions = pd.read_sql_query(query, conn, params={"ucc": active_ucc})
+                    else:
+                        df_sessions = pd.read_sql_query("SELECT * FROM bot_sessions WHERE date = CURRENT_DATE ORDER BY login_time DESC", conn)
 
                 sessions_data = []
                 for record in df_sessions.to_dict('records'):

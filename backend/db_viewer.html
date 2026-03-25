@@ -376,23 +376,24 @@
         <div class="ctrl-group">
             <div class="ctrl-label">Select Database</div>
             <select id="dbSelect">
-                <option value="signup">Signup Data</option>
-                <option value="session">User Session Data</option>
+                <option value="signup">Registered Users (All)</option>
+                <option value="session" selected>Today's Session Data</option>
+                <option value="session_all">All Session History</option>
             </select>
         </div>
 
         <!-- stat cards — session only -->
         <div class="stat-cards" id="statCards">
             <div class="s-card">
-                <div class="s-label">Total Sessions</div>
+                <div class="s-label" id="labelSessions">Today's Sessions</div>
                 <div class="s-val" id="statSessions">0</div>
             </div>
             <div class="s-card">
-                <div class="s-label">Total Trades</div>
+                <div class="s-label" id="labelTrades">Today's Trades</div>
                 <div class="s-val" id="statTrades">0</div>
             </div>
             <div class="s-card">
-                <div class="s-label">Total Net P&amp;L</div>
+                <div class="s-label" id="labelPnl">Today's Net P&amp;L</div>
                 <div class="s-val c-green" id="statPnl">&#8377;0.00</div>
             </div>
         </div>
@@ -462,9 +463,16 @@ function loadData() {
     const banner = document.getElementById('userBanner');
     const cards  = document.getElementById('statCards');
 
-    const isSession = val === 'session';
+    const isSession = val === 'session' || val === 'session_all';
     banner.style.display = isSession ? 'flex' : 'none';
     cards.style.display  = isSession ? 'flex' : 'none';
+
+    if (isSession) {
+        const isAll = val === 'session_all';
+        document.getElementById('labelSessions').textContent = isAll ? "Total Sessions" : "Today's Sessions";
+        document.getElementById('labelTrades').textContent   = isAll ? "Total Trades" : "Today's Trades";
+        document.getElementById('labelPnl').textContent      = isAll ? "Total Net P&L" : "Today's Net P&L";
+    }
 
     if (!val) {
         box.innerHTML = emptyHTML('Select a database to view data');
@@ -478,7 +486,11 @@ function loadData() {
             .catch(()=> { box.innerHTML = emptyHTML('&#10060; Login server unreachable',
                                                     'Make sure the login server is running on port 5001'); });
     } else {
-        fetch(`${window.location.origin}/api/sessions?t=${Date.now()}`)
+        const url = val === 'session_all' 
+            ? `${window.location.origin}/api/sessions?show_all=true&t=${Date.now()}`
+            : `${window.location.origin}/api/sessions?t=${Date.now()}`;
+
+        fetch(url)
             .then(r => r.json())
             .then(d => renderSession(d, box))
             .catch(()=> { box.innerHTML = emptyHTML('&#10060; Error loading session data'); });
@@ -540,6 +552,7 @@ function renderSession(data, box) {
     let h = `<div class="auto-bar"><div class="dot"></div>Auto-updating &nbsp;·&nbsp; ${ts}</div>
              <table><thead><tr>
                <th>#</th>
+               <th>Date</th>
                <th>Login</th>
                <th>Logout</th>
                <th>Mode</th>
@@ -573,6 +586,7 @@ function renderSession(data, box) {
 
         h += `<tr>
             <td>${i+1}</td>
+            <td style="color:var(--muted); font-size: 0.8rem;">${s.date || '—'}</td>
             <td style="font-variant-numeric:tabular-nums;">${loginFmt}</td>
             <td>${logoutFmt}</td>
             <td>${modeBadge}</td>
